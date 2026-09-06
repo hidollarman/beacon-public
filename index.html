@@ -39,6 +39,7 @@
     border-radius: 12px;
     padding: 20px;
     margin-bottom: 16px;
+    border: 2px solid #FFFFFF;
   }
   .price-row { display: flex; align-items: baseline; gap: 16px; flex-wrap: wrap; }
   .price { font-size: 56px; font-weight: 800; line-height: 1; }
@@ -158,8 +159,8 @@
     document.getElementById('pct').style.color = diff > 0 ? '#00E676' : diff < 0 ? '#FF1744' : '#9E9E9E';
 
     const sig = document.getElementById('signal');
-    if (Math.abs(pct) < 0.05) { sig.textContent = 'SIDEWAYS'; sig.className = 'signal side'; }
-    else if (pct > 0) { sig.textContent = 'UP'; sig.className = 'signal up'; }
+    if (forecastColor === '#B0B0B0') { sig.textContent = 'SIDEWAYS'; sig.className = 'signal side'; }
+    else if (forecastColor === '#39FF14') { sig.textContent = 'UP'; sig.className = 'signal up'; }
     else { sig.textContent = 'DOWN'; sig.className = 'signal down'; }
 
     const labels = [...liveSeries, ...forecastSeries].map(d => new Date(d.t).toLocaleTimeString('en-US', {hour:'2-digit',minute:'2-digit'}));
@@ -177,20 +178,20 @@
   setInterval(updateClock, 1000);
   updateClock();
   setInterval(() => {
-const last = liveSeries[liveSeries.length - 1];
-const np = last.p + (Math.random() - 0.5) * 1.5;
-liveSeries.push({ t: Date.now(), p: np });
-if (liveSeries.length > 90) liveSeries.shift();
-if (Math.random() < 0.3) {
-forecastSeries = [];
-const dir = Math.random() > 0.5 ? 1 : -1;
-for (let i = 1; i <= 5; i++) {
-forecastSeries.push({ t: Date.now() + i * 60000, p: last.p + dir * i * 0.8 + (Math.random() - 0.5) * 0.5 });
-}
-forecastColor = dir > 0 ? '#39FF14' : '#FF3131';
-}
-render();
-}, 5000);
+    const last = liveSeries[liveSeries.length - 1];
+    const np = last.p + (Math.random() - 0.5) * 1.5;
+    liveSeries.push({ t: Date.now(), p: np });
+    if (liveSeries.length > 90) liveSeries.shift();
+    if (Math.random() < 0.3) {
+      forecastSeries = [];
+      const dir = Math.random() > 0.5 ? 1 : -1;
+      for (let i = 1; i <= 5; i++) {
+        forecastSeries.push({ t: Date.now() + i * 60000, p: last.p + dir * i * 0.8 + (Math.random() - 0.5) * 0.5 });
+      }
+      forecastColor = dir > 0 ? '#39FF14' : '#FF3131';
+    }
+    render();
+  }, 5000);
 </script>
 </body>
 </html>
