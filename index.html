@@ -177,13 +177,20 @@
   setInterval(updateClock, 1000);
   updateClock();
   setInterval(() => {
-    // simulate tick
-    const last = liveSeries[liveSeries.length - 1];
-    const np = last.p + (Math.random() - 0.5) * 1.5;
-    liveSeries.push({ t: Date.now(), p: np });
-    if (liveSeries.length > 90) liveSeries.shift();
-    render();
-  }, 5000);
+const last = liveSeries[liveSeries.length - 1];
+const np = last.p + (Math.random() - 0.5) * 1.5;
+liveSeries.push({ t: Date.now(), p: np });
+if (liveSeries.length > 90) liveSeries.shift();
+if (Math.random() < 0.3) {
+forecastSeries = [];
+const dir = Math.random() > 0.5 ? 1 : -1;
+for (let i = 1; i <= 5; i++) {
+forecastSeries.push({ t: Date.now() + i * 60000, p: last.p + dir * i * 0.8 + (Math.random() - 0.5) * 0.5 });
+}
+forecastColor = dir > 0 ? '#39FF14' : '#FF3131';
+}
+render();
+}, 5000);
 </script>
 </body>
 </html>
