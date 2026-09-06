@@ -170,15 +170,13 @@
     const np = last.p + (Math.random() - 0.5) * 1.5;
     liveSeries.push({ t: Date.now(), p: np });
     if (liveSeries.length > 90) liveSeries.shift();
-    if (Math.random() < 0.5) {
-      forecastSeries = [];
-      const r = Math.random();
-      const dir = r < 0.34 ? 1 : r < 0.67 ? -1 : 0;
-      for (let i = 1; i <= 5; i++) {
-        forecastSeries.push({ t: Date.now() + i * 60000, p: last.p + dir * i * 0.8 + (Math.random() - 0.5) * 0.5 });
-      }
-      forecastColor = dir > 0 ? '#39FF14' : dir < 0 ? '#FF3131' : '#B0B0B0';
+    forecastSeries = [];
+    const r = Math.random();
+    const dir = r < 0.34 ? 1 : r < 0.67 ? -1 : 0;
+    for (let i = 1; i <= 5; i++) {
+      forecastSeries.push({ t: Date.now() + i * 60000, p: last.p + dir * i * 0.8 + (Math.random() - 0.5) * 0.5 });
     }
+    forecastColor = dir > 0 ? '#39FF14' : dir < 0 ? '#FF3131' : '#B0B0B0';
     render();
   }, 5000);
 </script>
