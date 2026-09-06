@@ -97,7 +97,7 @@
         labels: [],
         datasets: [
           { label: 'Live', data: [], borderColor: '#00E676', borderWidth: 2.5, pointRadius: 0, tension: 0.1 },
-          { label: 'Forecast', data: [], borderColor: '#B0B0B0', borderWidth: 0, pointRadius: 5, pointHoverRadius: 7, pointBackgroundColor: '#B0B0B0', tension: 0 }
+          { label: 'Forecast', data: [], borderColor: '#B0B0B0', borderWidth: 0, pointRadius: 5, pointHoverRadius: 7, pointBackgroundColor: [], tension: 0 }
         ]
       },
       options: {
@@ -156,7 +156,7 @@
     chart.data.datasets[0].data = [...liveSeries.map(d => d.p), ...Array(forecastSeries.length).fill(null)];
     chart.data.datasets[1].data = [...Array(liveSeries.length).fill(null), ...forecastSeries.map(d => d.p)];
     chart.data.datasets[1].borderColor = forecastColor;
-    chart.data.datasets[1].pointBackgroundColor = forecastColor;
+    chart.data.datasets[1].pointBackgroundColor = [...Array(liveSeries.length).fill('rgba(0,0,0,0)'), ...forecastSeries.map(() => forecastColor)];
     chart.update('none');
     document.getElementById('status').textContent = 'Demo mode — connect IBKR for live feed';
   }
