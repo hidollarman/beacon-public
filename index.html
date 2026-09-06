@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Beacon — SPX 5-Min Direction</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+  :root {
+    --bg: #0B0F14;
+    --panel: #121826;
+    --text: #E6EDF3;
+    --muted: #8B949E;
+    --green: #00E676;
+    --red: #FF1744;
+    --gray: #9E9E9E;
+    --fluo-green: #39FF14;
+    --fluo-red: #FF3131;
+    --fluo-gray: #B0B0B0;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    padding: 20px;
+    min-height: 100vh;
+  }
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+  }
+  .clock { font-size: 14px; color: var(--muted); }
+  .title { font-size: 22px; font-weight: 700; letter-spacing: 1px; }
+  .card {
+    background: var(--panel);
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 16px;
+  }
+  .price-row { display: flex; align-items: baseline; gap: 16px; flex-wrap: wrap; }
+  .price { font-size: 56px; font-weight: 800; line-height: 1; }
+  .open { font-size: 18px; color: var(--muted); }
+  .change { font-size: 18px; font-weight: 600; }
+  .pct { font-size: 16px; font-weight: 600; }
+  .signal {
+    font-size: 20px;
+    font-weight: 700;
+    padding: 8px 16px;
+    border-radius: 8px;
+    display: inline-block;
+    margin-top: 12px;
+  }
+  .up { background: rgba(0,230,118,0.15); color: var(--green); }
+  .down { background: rgba(255,23,68,0.15); color: var(--red); }
+  .side { background: rgba(158,158,158,0.15); color: var(--gray); }
+  .chart-wrap { height: 360px; position: relative; }
+  .legend { display: flex; gap: 20px; margin-top: 12px; font-size: 13px; color: var(--muted); flex-wrap: wrap; }
+  .dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; margin-right: 6px; }
+  .status { font-size: 12px; color: var(--muted); margin-top: 8px; }
+</style>
+</head>
+<body>
+  <div class="header">
+    <div class="title">BEACON</div>
+    <div class="clock" id="clock">--:-- PT</div>
+  </div>
+
+  <div class="card">
+    <div class="price-row">
+      <span class="price" id="price">—</span>
+      <span class="open">Open: <span id="open">—</span></span>
+      <span class="change" id="change">—</span>
+      <span class="pct" id="pct">—</span>
+    </div>
+    <div class="signal side" id="signal">SIDEWAYS</div>
+    <div class="status" id="status">Connecting to data…</div>
+  </div>
+
+  <div class="card">
+    <div class="chart-wrap">
+      <canvas id="chart"></canvas>
+    </div>
+    <div class="legend">
+      <span><span class="dot" style="background:var(--green)"></span>Live price</span>
+      <span><span class="dot" style="background:var(--fluo-green)"></span>Forecast up</span>
+      <span><span class="dot" style="background:var(--fluo-red)"></span>Forecast down</span>
+      <span><span class="dot" style="background:var(--fluo-gray)"></span>Forecast sideways</span>
+    </div>
+  </div>
+
+<script>
+  const ctx = document.getElementById('chart').getContext('2d');
+  let chart;
+  let liveSeries = [];
+  let forecastSeries = [];
+  let forecastColor = '#B0B0B0';
+
+  function initChart() {
+    chart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: [],
+        datasets: [
+          { label: 'Live', data: [], borderColor: '#00E676', borderWidth: 2.5, pointRadius: 0, tension: 0.1 },
+          { label: 'Forecast', data: [], borderColor: '#B0B0B0', borderWidth: 0, pointRadius: 6, pointHoverRadius: 8, pointBackgroundColor: '#B0B0B0', tension: 0 }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#8B949E', maxTicksLimit: 8 } },
+          y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#8B949E' } }
+        }
+      }
+    });
+  }
+
+  function updateClock() {
+    const now = new Date();
+    const pt = now.toLocaleTimeString('en-US', { timeZone: 'America/Los_Angeles', hour: '2-digit', minute: '2-digit', hour12: false });
+    document.getElementById('clock').textContent = pt + ' PT';
+  }
+
+  // Demo data generator — replace with IBKR/Cboe feed
+  function seedDemo() {
+    const base = 5700;
+    const now = Date.now();
+    for (let i = 0; i < 60; i++) {
+      const t = now - (60 - i) * 60000;
+      const p = base + Math.sin(i / 8) * 12 + (Math.random() - 0.5) * 6;
+      liveSeries.push({ t, p });
+    }
+    const last = liveSeries[liveSeries.length - 1].p;
+    const dir = Math.random() > 0.5 ? 1 : -1;
+    for (let i = 1; i <= 5; i++) {
+      forecastSeries.push({ t: now + i * 60000, p: last + dir * i * 0.8 + (Math.random() - 0.5) * 0.5 });
+    }
+    forecastColor = dir > 0 ? '#39FF14' : '#FF3131';
+    render();
+  }
+
+  function render() {
+    const last = liveSeries[liveSeries.length - 1];
+    const open = liveSeries[0].p;
+    const diff = last.p - open;
+    const pct = (diff / open) * 100;
+    document.getElementById('price').textContent = last.p.toFixed(2);
+    document.getElementById('open').textContent = open.toFixed(2);
+    document.getElementById('change').textContent = (diff >= 0 ? '+' : '') + diff.toFixed(2);
+    document.getElementById('pct').textContent = (pct >= 0 ? '+' : '') + pct.toFixed(2) + '%';
+    document.getElementById('price').style.color = diff > 0 ? '#00E676' : diff < 0 ? '#FF1744' : '#9E9E9E';
+    document.getElementById('change').style.color = diff > 0 ? '#00E676' : diff < 0 ? '#FF1744' : '#9E9E9E';
+    document.getElementById('pct').style.color = diff > 0 ? '#00E676' : diff < 0 ? '#FF1744' : '#9E9E9E';
+
+    const sig = document.getElementById('signal');
+    if (Math.abs(pct) < 0.05) { sig.textContent = 'SIDEWAYS'; sig.className = 'signal side'; }
+    else if (pct > 0) { sig.textContent = 'UP'; sig.className = 'signal up'; }
+    else { sig.textContent = 'DOWN'; sig.className = 'signal down'; }
+
+    const labels = [...liveSeries, ...forecastSeries].map(d => new Date(d.t).toLocaleTimeString('en-US', {hour:'2-digit',minute:'2-digit'}));
+    chart.data.labels = labels;
+    chart.data.datasets[0].data = [...liveSeries.map(d => d.p), ...Array(forecastSeries.length).fill(null)];
+    chart.data.datasets[1].data = [...Array(liveSeries.length).fill(null), ...forecastSeries.map(d => d.p)];
+    chart.data.datasets[1].borderColor = forecastColor;
+    chart.data.datasets[1].pointBackgroundColor = forecastColor;
+    chart.update('none');
+    document.getElementById('status').textContent = 'Demo mode — connect IBKR for live feed';
+  }
+
+  initChart();
+  seedDemo();
+  setInterval(updateClock, 1000);
+  updateClock();
+  setInterval(() => {
+    // simulate tick
+    const last = liveSeries[liveSeries.length - 1];
+    const np = last.p + (Math.random() - 0.5) * 1.5;
+    liveSeries.push({ t: Date.now(), p: np });
+    if (liveSeries.length > 90) liveSeries.shift();
+    render();
+  }, 5000);
+</script>
+</body>
+</html>
